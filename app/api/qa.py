@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -17,8 +17,10 @@ class QARequest(BaseModel):
 @router.post("")
 async def api_ask(body: QARequest, db: Session = Depends(get_db)):
     """单轮知识问答，返回答案与引用来源。"""
-    result = ask_sync(body.query, db)
-    return result
+    try:
+        return ask_sync(body.query, db)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/stream")

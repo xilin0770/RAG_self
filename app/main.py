@@ -1,11 +1,16 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.database import init_db
 from app.api import importer, courses, search, questions, qa, conversations
+
+WEB_DIR = Path(__file__).resolve().parent / "web"
+WEB_STATIC_DIR = WEB_DIR / "static"
 
 
 @asynccontextmanager
@@ -35,6 +40,7 @@ app.include_router(search.router)
 app.include_router(questions.router)
 app.include_router(qa.router)
 app.include_router(conversations.router)
+app.mount("/web/static", StaticFiles(directory=str(WEB_STATIC_DIR)), name="web-static")
 
 
 @app.exception_handler(Exception)
@@ -48,3 +54,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/")
 def root():
     return {"message": "教育知识库 RAG 系统 API", "docs": "/docs"}
+
+
+@app.get("/web", include_in_schema=False)
+@app.get("/web/", include_in_schema=False)
+def web_console():
+    return FileResponse(str(WEB_DIR / "index.html"))

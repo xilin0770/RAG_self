@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>教育知识库 Web 控制台</title>
+    <link rel="stylesheet" href="/web/static/style.css" />
+    <script src="/web/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="ambient"></div>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">RAG SELF CONSOLE</p>
+        <h1>教育知识库 Web 控制台</h1>
+        <p class="desc">
+          这个页面可直接操作内容导入接口，并实时查看 `POST /qa/stream` 的 SSE 流式输出。
+        </p>
+        <div class="links">
+          <a href="/docs" target="_blank" rel="noreferrer">打开 Swagger 文档</a>
+          <a href="/" target="_blank" rel="noreferrer">查看 API 根路由</a>
+        </div>
+      </header>
+
+      <section class="card api-config">
+        <h2>连接设置</h2>
+        <div class="row">
+          <label class="field grow">
+            <span>API Base URL</span>
+            <input id="api-base" type="text" placeholder="http://127.0.0.1:8000" />
+          </label>
+          <button id="use-origin" type="button" class="secondary">使用当前站点</button>
+        </div>
+        <p id="api-hint" class="hint"></p>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>内容导入</h2>
+          <form id="import-form" class="stack">
+            <label class="field">
+              <span>文件</span>
+              <input name="file" type="file" required />
+            </label>
+            <div class="split">
+              <label class="field">
+                <span>内容类型</span>
+                <input name="content_type" type="text" value="doc_fragment" />
+              </label>
+              <label class="field">
+                <span>课程名</span>
+                <input name="course_name" type="text" placeholder="Python 入门" />
+              </label>
+            </div>
+            <div class="split">
+              <label class="field">
+                <span>项目名</span>
+                <input name="project_name" type="text" placeholder="RAG 实战项目" />
+              </label>
+              <label class="field">
+                <span>章节名</span>
+                <input name="chapter_name" type="text" placeholder="向量检索" />
+              </label>
+            </div>
+            <label class="field">
+              <span>来源路径</span>
+              <input name="source_path" type="text" placeholder="course/python/chapter1.md" />
+            </label>
+            <button id="import-submit" type="submit">开始导入</button>
+          </form>
+
+          <div class="result">
+            <h3>提交结果</h3>
+            <pre id="import-submit-output">暂无</pre>
+          </div>
+
+          <div class="row">
+            <label class="field grow">
+              <span>任务 ID</span>
+              <input id="task-id-input" type="number" min="1" placeholder="例如 1" />
+            </label>
+            <button id="query-task" type="button" class="secondary">查询状态</button>
+            <button id="auto-task" type="button" class="secondary">自动轮询</button>
+          </div>
+
+          <div class="result">
+            <h3>任务状态</h3>
+            <pre id="import-status-output">暂无</pre>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>SSE 问答</h2>
+          <form id="qa-form" class="stack">
+            <label class="field">
+              <span>问题</span>
+              <textarea
+                id="qa-query"
+                rows="5"
+                required
+                placeholder="例如：总结一下 RAG 系统里文档分块与检索的流程"
+              ></textarea>
+            </label>
+            <div class="row">
+              <button id="qa-start" type="submit">开始流式回答</button>
+              <button id="qa-stop" type="button" class="secondary" disabled>停止</button>
+            </div>
+          </form>
+
+          <div class="stream">
+            <div class="stream-head">
+              <h3>实时输出</h3>
+              <span id="stream-state" class="badge idle">空闲</span>
+            </div>
+            <div id="stream-answer" class="stream-answer"></div>
+          </div>
+
+          <div class="result">
+            <h3>引用来源</h3>
+            <div id="qa-citations" class="citations-empty">暂无</div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
