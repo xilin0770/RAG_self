@@ -37,6 +37,14 @@
           <el-icon><List /></el-icon>
           <span>对话管理</span>
         </el-menu-item>
+        <el-menu-item index="/history">
+          <el-icon><Clock /></el-icon>
+          <span>导入历史</span>
+        </el-menu-item>
+        <el-menu-item index="/documents">
+          <el-icon><Document /></el-icon>
+          <span>文档库</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -75,7 +83,7 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  Upload, Reading, EditPen, Search, ChatDotSquare, List, Expand, Fold,
+  Upload, Reading, EditPen, Search, ChatDotSquare, List, Expand, Fold, Clock, Document,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

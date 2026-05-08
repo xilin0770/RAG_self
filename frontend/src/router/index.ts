@@ -50,6 +50,18 @@ const router = createRouter({
           component: () => import('@/views/ConversationListView.vue'),
           meta: { title: '对话管理' },
         },
+        {
+          path: 'history',
+          name: 'history',
+          component: () => import('@/views/ImportHistoryView.vue'),
+          meta: { title: '导入历史' },
+        },
+        {
+          path: 'documents',
+          name: 'documents',
+          component: () => import('@/views/DocumentLibraryView.vue'),
+          meta: { title: '文档库' },
+        },
       ],
     },
   ],
