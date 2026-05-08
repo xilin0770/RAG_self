@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.document import DocumentFragment
 from app.services.embedding import embed_query
 from app.services.vector_store import search as vector_search
@@ -17,13 +18,14 @@ def search_documents(
     """Semantic search for document fragments. Returns results with source info."""
     query_embedding = embed_query(query)
 
-    filter_meta = {}
+    conditions = []
     if course_name:
-        filter_meta["course_name"] = course_name
+        conditions.append({"course_name": {"$eq": course_name}})
     if content_type:
-        filter_meta["content_type"] = content_type
+        conditions.append({"content_type": {"$eq": content_type}})
 
-    results = vector_search(query_embedding, top_k=top_k, filter_meta=filter_meta or None)
+    filter_meta = {"$and": conditions} if conditions else None
+    results = vector_search(query_embedding, top_k=top_k, filter_meta=filter_meta)
 
     output = []
     if not results.get("ids") or not results["ids"][0]:
@@ -34,6 +36,9 @@ def search_documents(
         distance = results["distances"][0][i] if results.get("distances") else 0
         document = results["documents"][0][i] if results.get("documents") else ""
         score = 1 - distance  # cosine distance to similarity
+
+        if score < settings.retrieval_threshold:
+            continue
 
         output.append({
             "chunk_id": chunk_id,

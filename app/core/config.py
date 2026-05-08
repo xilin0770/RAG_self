@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     # Retrieval
     top_k: int = 5
+    retrieval_threshold: float = 0.3
 
     # Server
     host: str = "0.0.0.0"
