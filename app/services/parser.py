@@ -6,13 +6,16 @@ from docx import Document
 
 
 def parse_pdf(file_bytes: bytes) -> str:
-    reader = PdfReader(io.BytesIO(file_bytes))
-    texts = []
-    for page in reader.pages:
-        text = page.extract_text()
-        if text:
-            texts.append(text)
-    return "\n\n".join(texts)
+    try:
+        reader = PdfReader(io.BytesIO(file_bytes))
+        texts = []
+        for page in reader.pages:
+            text = page.extract_text()
+            if text:
+                texts.append(text)
+        return "\n\n".join(texts)
+    except Exception:
+        return "[unreadable PDF content]"
 
 
 def parse_docx(file_bytes: bytes) -> str:
