@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from sqlalchemy.orm import Session
+
 from app.core.database import SessionLocal
 from app.models.import_task import ImportTask
 from app.models.document import DocumentFragment
@@ -94,3 +96,20 @@ def run_import(
             db.commit()
     finally:
         db.close()
+
+
+def list_import_tasks(
+    db: Session,
+    status: str = "",
+    content_type: str = "",
+    page: int = 1,
+    page_size: int = 20,
+):
+    q = db.query(ImportTask)
+    if status:
+        q = q.filter(ImportTask.status == status)
+    if content_type:
+        q = q.filter(ImportTask.content_type == content_type)
+    total = q.count()
+    tasks = q.order_by(ImportTask.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    return tasks, total

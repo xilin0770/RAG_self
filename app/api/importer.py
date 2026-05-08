@@ -2,12 +2,12 @@ import json
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import APIRouter, UploadFile, File, Form, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, Query, UploadFile, File, Form, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.import_task import ImportTask
-from app.services.importer import run_import
+from app.services.importer import run_import, list_import_tasks
 
 router = APIRouter(prefix="/import", tags=["内容导入"])
 
@@ -76,4 +76,35 @@ async def get_import_status(task_id: int, db: Session = Depends(get_db)):
         "error_message": task.error_message,
         "created_at": task.created_at.isoformat() if task.created_at else "",
         "updated_at": task.updated_at.isoformat() if task.updated_at else "",
+    }
+
+
+@router.get("")
+async def api_list_import_tasks(
+    status: str = Query(default=""),
+    content_type: str = Query(default=""),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    tasks, total = list_import_tasks(db, status=status, content_type=content_type, page=page, page_size=page_size)
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "tasks": [
+            {
+                "task_id": t.id,
+                "file_name": t.file_name,
+                "content_type": t.content_type,
+                "status": t.status,
+                "progress": t.progress,
+                "total_chunks": t.total_chunks,
+                "completed_chunks": t.completed_chunks,
+                "error_message": t.error_message,
+                "created_at": t.created_at.isoformat() if t.created_at else "",
+                "updated_at": t.updated_at.isoformat() if t.updated_at else "",
+            }
+            for t in tasks
+        ],
     }

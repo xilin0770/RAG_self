@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.core.database import init_db
-from app.api import importer, courses, search, questions, qa, conversations
+from app.api import importer, courses, search, questions, qa, conversations, documents
 
 WEB_DIR = Path(__file__).resolve().parent / "web"
 WEB_STATIC_DIR = WEB_DIR / "static"
@@ -40,6 +40,7 @@ app.include_router(search.router)
 app.include_router(questions.router)
 app.include_router(qa.router)
 app.include_router(conversations.router)
+app.include_router(documents.router)
 app.mount("/web/static", StaticFiles(directory=str(WEB_STATIC_DIR)), name="web-static")
 
 
