@@ -1,10 +1,11 @@
 from datetime import datetime
 
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from app.core.database import SessionLocal
 from app.models.import_task import ImportTask
 from app.models.document import DocumentFragment
 from app.services.parser import parse_document
-from app.services.chunker import split_text
 from app.services.embedding import embed_texts
 from app.services.vector_store import add_chunks
 
@@ -14,6 +15,8 @@ def run_import(
     file_bytes: bytes,
     filename: str,
     metadata: dict,
+    chunk_size: int = 500,
+    chunk_overlap: int = 50,
 ):
     """Run the full import pipeline and update task status."""
     db = SessionLocal()
@@ -29,8 +32,14 @@ def run_import(
         # 1. Parse
         text = parse_document(file_bytes, filename)
 
-        # 2. Chunk
-        chunks = split_text(text)
+        # 2. Chunk with user-specified parameters
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            separators=["\n\n", "\n", "。", ".", " ", ""],
+        )
+        chunks = splitter.split_text(text)
+        chunks = [c.strip() for c in chunks if c.strip()]
         if not chunks:
             raise ValueError("No text chunks produced")
 

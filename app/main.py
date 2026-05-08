@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="教育知识库 RAG 系统",
     description="面向教育培训场景的智能知识库系统，支持内容导入、课程检索、文档检索、题库检索和知识问答",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -60,3 +60,12 @@ def root():
 @app.get("/web/", include_in_schema=False)
 def web_console():
     return FileResponse(str(WEB_DIR / "index.html"))
+
+
+@app.get("/web/{rest:path}", include_in_schema=False)
+def web_spa_fallback(rest: str):
+    """SPA fallback — return index.html for all /web/* routes."""
+    index_path = WEB_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    return JSONResponse(status_code=404, content={"error": "Web console not built"})
