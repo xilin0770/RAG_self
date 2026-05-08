@@ -1,0 +1,1 @@
+import{c as a}from"./client-B4DxhF5c.js";async function s(t){const{data:n}=await a.get("/conversations",{params:t});return n}async function e(t){const{data:n}=await a.post("/conversations",{title:t});return n}async function c(t){const{data:n}=await a.delete(`/conversations/${t}`);return n}export{e as c,c as d,s as l};
