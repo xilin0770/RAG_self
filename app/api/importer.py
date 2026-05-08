@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import APIRouter, UploadFile, File, Form, Depends, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, Form, Depends, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -64,10 +64,11 @@ async def get_import_status(task_id: int, db: Session = Depends(get_db)):
     """查询导入任务状态。"""
     task = db.get(ImportTask, task_id)
     if not task:
-        return {"error": "Task not found"}
+        raise HTTPException(status_code=404, detail="Task not found")
     return {
         "task_id": task.id,
         "file_name": task.file_name,
+        "content_type": task.content_type,
         "status": task.status,
         "progress": task.progress,
         "total_chunks": task.total_chunks,
