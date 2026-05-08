@@ -152,6 +152,16 @@ async function doAsk() {
           } catch { /* ignore */ }
           continue
         }
+        if (payload.startsWith('[CONV_ID]')) {
+          try {
+            const info = JSON.parse(payload.slice(9))
+            if (info.conversation_id && !conversationId.value) {
+              conversationId.value = info.conversation_id
+              fetchConversations()
+            }
+          } catch { /* ignore */ }
+          continue
+        }
         answer.value += payload
       }
     }

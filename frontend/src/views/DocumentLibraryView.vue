@@ -29,10 +29,9 @@
         <el-table-column label="类型" width="100">
           <template #default="{ row }">{{ contentTypeLabel(row.content_type) }}</template>
         </el-table-column>
+        <el-table-column prop="source_file" label="文档名称" min-width="200" />
         <el-table-column prop="course_name" label="课程" width="120" />
         <el-table-column prop="project_name" label="项目" width="120" />
-        <el-table-column prop="chapter_name" label="章节" width="120" />
-        <el-table-column prop="source_file" label="来源文件" width="180" />
         <el-table-column label="内容预览" min-width="200">
           <template #default="{ row }">{{ row.content?.substring(0, 100) }}{{ row.content?.length > 100 ? '...' : '' }}</template>
         </el-table-column>
