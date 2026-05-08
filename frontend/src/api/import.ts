@@ -1,5 +1,5 @@
 import client from './client'
-import type { ImportTask, ImportSubmitResult } from '@/types'
+import type { ImportTask, ImportSubmitResult, ImportTaskListResponse } from '@/types'
 
 export async function uploadFiles(
   files: File[],
@@ -25,5 +25,15 @@ export async function uploadFiles(
 
 export async function getImportStatus(taskId: number): Promise<ImportTask> {
   const { data } = await client.get<ImportTask>(`/import/${taskId}/status`)
+  return data
+}
+
+export async function listImportTasks(params: {
+  status?: string
+  content_type?: string
+  page?: number
+  page_size?: number
+} = {}): Promise<ImportTaskListResponse> {
+  const { data } = await client.get<ImportTaskListResponse>('/import/', { params })
   return data
 }

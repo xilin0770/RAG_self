@@ -2,12 +2,14 @@
 export interface ImportTask {
   task_id: number
   file_name: string
+  content_type: string
   status: 'pending' | 'processing' | 'completed' | 'failed'
   progress: number
   total_chunks: number
   completed_chunks: number
   error_message?: string
   created_at: string
+  updated_at: string
 }
 
 export interface ImportSubmitResult {
@@ -95,6 +97,32 @@ export interface SearchResponse {
   query: string
   total: number
   results: SearchResult[]
+}
+
+export interface DocumentFragment {
+  id: number
+  content: string
+  content_type: string
+  course_name: string
+  project_name: string
+  chapter_name: string
+  source_file: string
+  source_path: string
+  chunk_id: string
+}
+
+export interface DocumentListResponse {
+  total: number
+  page: number
+  page_size: number
+  documents: DocumentFragment[]
+}
+
+export interface ImportTaskListResponse {
+  total: number
+  page: number
+  page_size: number
+  tasks: ImportTask[]
 }
 
 // ---- QA ----

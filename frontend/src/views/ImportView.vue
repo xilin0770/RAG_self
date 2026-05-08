@@ -135,11 +135,13 @@ async function submitImport() {
       tasks.value.unshift({
         task_id: r.task_id,
         file_name: r.file_name,
+        content_type: metadata.content_type,
         status: 'pending',
         progress: 0,
         total_chunks: 0,
         completed_chunks: 0,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
     }
     ElMessage.success(`${results.length} 个文件已提交导入`)
