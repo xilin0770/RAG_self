@@ -14,6 +14,17 @@ class Base(DeclarativeBase):
 def init_db():
     from app.models import course, document, question, import_task, conversation  # noqa: F401
     Base.metadata.create_all(bind=engine)
+    # Ensure content_type column exists on existing import_tasks tables
+    try:
+        with engine.connect() as conn:
+            conn.execute(
+                __import__("sqlalchemy").text(
+                    "ALTER TABLE import_tasks ADD COLUMN content_type VARCHAR(50) DEFAULT ''"
+                )
+            )
+            conn.commit()
+    except Exception:
+        pass  # column already exists
 
 
 def get_db():
