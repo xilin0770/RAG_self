@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -21,12 +21,12 @@ def run_import(
     """Run the full import pipeline and update task status."""
     db = SessionLocal()
     try:
-        task = db.query(ImportTask).get(task_id)
+        task = db.get(ImportTask, task_id)
         if not task:
             return
 
         task.status = "processing"
-        task.updated_at = datetime.utcnow()
+        task.updated_at = datetime.now(timezone.utc)
         db.commit()
 
         # 1. Parse
@@ -81,16 +81,16 @@ def run_import(
         task.status = "completed"
         task.completed_chunks = len(chunks)
         task.progress = 100.0
-        task.updated_at = datetime.utcnow()
+        task.updated_at = datetime.now(timezone.utc)
         db.commit()
 
     except Exception as e:
         db.rollback()
-        task = db.query(ImportTask).get(task_id)
+        task = db.get(ImportTask, task_id)
         if task:
             task.status = "failed"
             task.error_message = str(e)
-            task.updated_at = datetime.utcnow()
+            task.updated_at = datetime.now(timezone.utc)
             db.commit()
     finally:
         db.close()

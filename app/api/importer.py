@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, UploadFile, File, Form, Depends, BackgroundTasks
@@ -40,10 +40,11 @@ async def import_documents(
 
         task = ImportTask(
             file_name=file.filename or "unknown",
+            content_type=metadata.get("content_type", ""),
             status="pending",
             metadata_json=json.dumps(metadata, ensure_ascii=False),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         db.add(task)
         db.commit()
@@ -56,3 +57,22 @@ async def import_documents(
         results.append({"task_id": task.id, "status": task.status, "file_name": task.file_name})
 
     return results
+
+
+@router.get("/{task_id}/status")
+async def get_import_status(task_id: int, db: Session = Depends(get_db)):
+    """查询导入任务状态。"""
+    task = db.get(ImportTask, task_id)
+    if not task:
+        return {"error": "Task not found"}
+    return {
+        "task_id": task.id,
+        "file_name": task.file_name,
+        "status": task.status,
+        "progress": task.progress,
+        "total_chunks": task.total_chunks,
+        "completed_chunks": task.completed_chunks,
+        "error_message": task.error_message,
+        "created_at": task.created_at.isoformat() if task.created_at else "",
+        "updated_at": task.updated_at.isoformat() if task.updated_at else "",
+    }
