@@ -33,7 +33,7 @@ def get_conversation(db: Session, conversation_id: int) -> Optional[Conversation
 
 
 def delete_conversation(db: Session, conversation_id: int) -> bool:
-    conv = db.query(Conversation).get(conversation_id)
+    conv = db.get(Conversation, conversation_id)
     if not conv:
         return False
     db.delete(conv)

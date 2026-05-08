@@ -57,4 +57,4 @@ def list_questions(
 
 
 def get_question(db: Session, question_id: int) -> Optional[Question]:
-    return db.query(Question).get(question_id)
+    return db.get(Question, question_id)

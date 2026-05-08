@@ -12,7 +12,13 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://127.0.0.1:8000',
+      '/import': 'http://127.0.0.1:8000',
+      '/courses': 'http://127.0.0.1:8000',
+      '/search': 'http://127.0.0.1:8000',
+      '/questions': 'http://127.0.0.1:8000',
+      '/qa': 'http://127.0.0.1:8000',
+      '/conversations': 'http://127.0.0.1:8000',
+      '/openapi.json': 'http://127.0.0.1:8000',
     },
   },
   build: {
