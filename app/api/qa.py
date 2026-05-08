@@ -18,16 +18,16 @@ class QARequest(BaseModel):
 async def api_ask(body: QARequest, db: Session = Depends(get_db)):
     """单轮知识问答，返回答案与引用来源。"""
     try:
-        return ask_sync(body.query, db)
+        return ask_sync(body.query, db, conversation_id=body.conversation_id)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/stream")
-async def api_ask_stream(body: QARequest):
+async def api_ask_stream(body: QARequest, db: Session = Depends(get_db)):
     """流式知识问答，SSE 实时输出。"""
     return StreamingResponse(
-        ask_stream(body.query),
+        ask_stream(body.query, db, conversation_id=body.conversation_id),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
