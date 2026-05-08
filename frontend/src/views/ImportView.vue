@@ -33,7 +33,11 @@
 
       <el-form :model="metadata" label-width="80px" :inline="true">
         <el-form-item label="内容类型">
-          <el-input v-model="metadata.content_type" placeholder="doc_fragment" />
+          <el-select v-model="metadata.content_type" style="width: 200px">
+            <el-option label="知识文档" value="doc_fragment" />
+            <el-option label="课程" value="course_intro" />
+            <el-option label="题目" value="question" />
+          </el-select>
         </el-form-item>
         <el-form-item label="课程名">
           <el-input v-model="metadata.course_name" placeholder="Python 入门" />
