@@ -17,12 +17,13 @@ export default defineConfig({
       '/search': 'http://127.0.0.1:8000',
       '/questions': 'http://127.0.0.1:8000',
       '/qa': 'http://127.0.0.1:8000',
+      '/documents': 'http://127.0.0.1:8000',
       '/conversations': 'http://127.0.0.1:8000',
       '/openapi.json': 'http://127.0.0.1:8000',
     },
   },
   build: {
     outDir: fileURLToPath(new URL('../app/web/static', import.meta.url)),
-    emptyOutDir: true,
+    emptyOutDir: false,
   },
 })
