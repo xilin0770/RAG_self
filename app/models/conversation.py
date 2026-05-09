@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -24,5 +24,6 @@ class Message(Base):
     role = Column(String(50), nullable=False)  # user, assistant
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    citations = Column(JSON, nullable=True)
 
     conversation = relationship("Conversation", back_populates="messages")

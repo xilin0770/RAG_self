@@ -26,6 +26,18 @@ def init_db():
     except Exception:
         pass  # column already exists
 
+    # Ensure citations column exists on existing messages tables
+    try:
+        with engine.connect() as conn:
+            conn.execute(
+                __import__("sqlalchemy").text(
+                    "ALTER TABLE messages ADD COLUMN citations JSON DEFAULT NULL"
+                )
+            )
+            conn.commit()
+    except Exception:
+        pass  # column already exists
+
 
 def get_db():
     db = SessionLocal()
