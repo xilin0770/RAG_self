@@ -111,6 +111,24 @@ export interface DocumentFragment {
   chunk_id: string
 }
 
+export interface DocumentSource {
+  source_file: string
+  source_path: string
+  content_type: string
+  course_name: string
+  project_name: string
+  chapter_name: string
+  fragment_count: number
+  preview: string
+}
+
+export interface DocumentSourceListResponse {
+  total: number
+  page: number
+  page_size: number
+  documents: DocumentSource[]
+}
+
 export interface DocumentListResponse {
   total: number
   page: number
@@ -157,6 +175,7 @@ export interface Message {
   role: 'user' | 'assistant'
   content: string
   created_at: string
+  citations?: Citation[]
 }
 
 // ---- API ----
