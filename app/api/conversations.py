@@ -52,8 +52,13 @@ async def api_get_conversation(conversation_id: int, db: Session = Depends(get_d
         "id": conv.id,
         "title": conv.title,
         "messages": [
-            {"id": m.id, "role": m.role, "content": m.content,
-             "created_at": m.created_at.isoformat() if m.created_at else None}
+            {
+                "id": m.id,
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+                "citations": m.citations or [],
+            }
             for m in conv.messages
         ],
     }
