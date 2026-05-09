@@ -1,3 +1,4 @@
+import threading
 from datetime import datetime, timezone
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -10,6 +11,66 @@ from app.models.document import DocumentFragment
 from app.services.parser import parse_document
 from app.services.embedding import embed_texts
 from app.services.vector_store import add_chunks
+from app.services.extractor import extract_structured_content
+from app.services.question_service import create_question
+from app.services.course_service import create_course
+
+
+def run_extraction(
+    task_id: int,
+    text: str,
+    filename: str,
+    metadata: dict,
+):
+    """Run LLM structured extraction and persist results to DB."""
+    db = SessionLocal()
+    try:
+        result = extract_structured_content(text, filename)
+
+        questions_count = 0
+        courses_count = 0
+        course_name = metadata.get("course_name", "")
+
+        for q in result.get("questions", []):
+            try:
+                create_question(
+                    db=db,
+                    content=q.get("content", ""),
+                    question_type=q.get("question_type", "short_answer"),
+                    options=q.get("options", []),
+                    answer=q.get("answer", ""),
+                    explanation=q.get("explanation", ""),
+                    course_name=course_name,
+                    source_file=filename,
+                )
+                questions_count += 1
+            except Exception:
+                pass
+
+        for c in result.get("courses", []):
+            try:
+                create_course(
+                    db=db,
+                    name=c.get("name", ""),
+                    description=c.get("description", ""),
+                    prerequisites=c.get("prerequisites", ""),
+                    target_audience=c.get("target_audience", ""),
+                    learning_goals=c.get("learning_goals", ""),
+                )
+                courses_count += 1
+            except Exception:
+                pass
+
+        task = db.get(ImportTask, task_id)
+        if task:
+            task.questions_extracted = questions_count
+            task.courses_extracted = courses_count
+            task.updated_at = datetime.now(timezone.utc)
+            db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
 
 
 def run_import(
@@ -34,7 +95,17 @@ def run_import(
         # 1. Parse
         text = parse_document(file_bytes, filename)
 
-        # 2. Chunk with user-specified parameters
+        # 2. Start extraction in parallel for question/course types
+        content_type = metadata.get("content_type", "")
+        if content_type in ("question", "course_intro"):
+            t = threading.Thread(
+                target=run_extraction,
+                args=(task_id, text, filename, metadata),
+                daemon=True,
+            )
+            t.start()
+
+        # 3. Chunk with user-specified parameters
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
