@@ -41,8 +41,8 @@ def delete_conversation(db: Session, conversation_id: int) -> bool:
     return True
 
 
-def add_message(db: Session, conversation_id: int, role: str, content: str) -> Message:
-    msg = Message(conversation_id=conversation_id, role=role, content=content)
+def add_message(db: Session, conversation_id: int, role: str, content: str, citations: Optional[list] = None) -> Message:
+    msg = Message(conversation_id=conversation_id, role=role, content=content, citations=citations)
     db.add(msg)
     db.commit()
     db.refresh(msg)
