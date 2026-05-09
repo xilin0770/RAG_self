@@ -74,7 +74,7 @@ def ask_sync(query: str, db: Session, conversation_id: int | None = None) -> dic
 
     if not docs:
         answer = "不知道"
-        add_message(db, conversation_id, "assistant", answer)
+        add_message(db, conversation_id, "assistant", answer, citations=[])
         return {"answer": answer, "citations": [], "conversation_id": conversation_id}
 
     # Generate
@@ -103,7 +103,7 @@ def ask_sync(query: str, db: Session, conversation_id: int | None = None) -> dic
     ]
 
     # Save assistant message
-    add_message(db, conversation_id, "assistant", answer)
+    add_message(db, conversation_id, "assistant", answer, citations=citations)
 
     return {
         "answer": answer,
@@ -142,7 +142,7 @@ async def ask_stream(query: str, db: Session, conversation_id: int | None = None
 
         if not docs:
             answer = "不知道"
-            add_message(db, conversation_id, "assistant", answer)
+            add_message(db, conversation_id, "assistant", answer, citations=[])
             yield _to_sse_data(answer)
             yield _to_sse_data(f"[CONV_ID]{conv_id_json}")
             yield _to_sse_data("[DONE]")
@@ -163,9 +163,8 @@ async def ask_stream(query: str, db: Session, conversation_id: int | None = None
 
         # Save assistant message
         full_answer = "".join(full_answer_parts)
-        add_message(db, conversation_id, "assistant", full_answer)
 
-        # Send citations at end
+        # Build citations
         citations = [
             {
                 "index": i + 1,
@@ -176,6 +175,9 @@ async def ask_stream(query: str, db: Session, conversation_id: int | None = None
             }
             for i, d in enumerate(docs)
         ]
+        add_message(db, conversation_id, "assistant", full_answer, citations=citations)
+
+        # Send citations at end
         yield _to_sse_data(f"[CITATIONS]{json.dumps(citations, ensure_ascii=False)}")
         yield _to_sse_data(f"[CONV_ID]{conv_id_json}")
         yield _to_sse_data("[DONE]")
