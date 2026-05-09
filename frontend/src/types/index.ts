@@ -7,6 +7,8 @@ export interface ImportTask {
   progress: number
   total_chunks: number
   completed_chunks: number
+  questions_extracted?: number
+  courses_extracted?: number
   error_message?: string
   created_at: string
   updated_at: string

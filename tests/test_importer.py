@@ -113,6 +113,150 @@ class TestRunImport:
         assert fragment_call.chapter_name == "Calculus"
         assert fragment_call.chunk_id == "chunk-x"
 
+    @patch("app.services.importer.run_extraction")
+    @patch("app.services.importer.RecursiveCharacterTextSplitter")
+    @patch("app.services.importer.add_chunks")
+    @patch("app.services.importer.embed_texts")
+    @patch("app.services.importer.parse_document")
+    @patch("app.services.importer.SessionLocal")
+    def test_run_import_spawns_extraction_for_question_type(
+        self,
+        mock_session_local,
+        mock_parse,
+        mock_embed,
+        mock_add,
+        mock_splitter_class,
+        mock_run_extraction,
+    ):
+        mock_db = MagicMock()
+        mock_session_local.return_value = mock_db
+
+        mock_task = MagicMock()
+        mock_task.id = 1
+        mock_task.status = "pending"
+        mock_db.get.return_value = mock_task
+
+        mock_splitter = MagicMock()
+        mock_splitter.split_text.return_value = ["chunk"]
+        mock_splitter_class.return_value = mock_splitter
+
+        mock_parse.return_value = "What is Python? A programming language."
+        mock_embed.return_value = [[0.1] * 1024]
+        mock_add.return_value = ["chunk-1"]
+
+        metadata = {"content_type": "question", "course_name": "Python"}
+        run_import(1, b"test", "test.md", metadata)
+
+        mock_run_extraction.assert_called_once_with(1, "What is Python? A programming language.", "test.md", metadata)
+
+    @patch("app.services.importer.run_extraction")
+    @patch("app.services.importer.RecursiveCharacterTextSplitter")
+    @patch("app.services.importer.add_chunks")
+    @patch("app.services.importer.embed_texts")
+    @patch("app.services.importer.parse_document")
+    @patch("app.services.importer.SessionLocal")
+    def test_run_import_skips_extraction_for_doc_fragment(
+        self,
+        mock_session_local,
+        mock_parse,
+        mock_embed,
+        mock_add,
+        mock_splitter_class,
+        mock_run_extraction,
+    ):
+        mock_db = MagicMock()
+        mock_session_local.return_value = mock_db
+
+        mock_task = MagicMock()
+        mock_task.id = 1
+        mock_task.status = "pending"
+        mock_db.get.return_value = mock_task
+
+        mock_splitter = MagicMock()
+        mock_splitter.split_text.return_value = ["chunk"]
+        mock_splitter_class.return_value = mock_splitter
+
+        mock_parse.return_value = "Some document text."
+        mock_embed.return_value = [[0.1] * 1024]
+        mock_add.return_value = ["chunk-1"]
+
+        metadata = {"content_type": "doc_fragment", "course_name": "Python"}
+        run_import(1, b"test", "test.md", metadata)
+
+        mock_run_extraction.assert_not_called()
+
+
+class TestRunExtraction:
+    @patch("app.services.importer.create_course")
+    @patch("app.services.importer.create_question")
+    @patch("app.services.importer.extract_structured_content")
+    @patch("app.services.importer.SessionLocal")
+    def test_run_extraction_persists_questions_and_courses(
+        self,
+        mock_session_local,
+        mock_extract,
+        mock_create_question,
+        mock_create_course,
+    ):
+        from app.services.importer import run_extraction
+
+        mock_db = MagicMock()
+        mock_session_local.return_value = mock_db
+
+        mock_task = MagicMock()
+        mock_task.status = "processing"
+        mock_db.get.return_value = mock_task
+
+        # Course not found in DB → create_course will be called
+        mock_db.query.return_value.filter.return_value.first.return_value = None
+
+        mock_extract.return_value = {
+            "questions": [
+                {"content": "Q1?", "question_type": "short_answer", "options": [], "answer": "A1", "explanation": "E1"},
+                {"content": "Q2?", "question_type": "true_false", "options": [], "answer": "对", "explanation": ""},
+            ],
+            "courses": [
+                {"name": "Python入门", "description": "基础课程", "prerequisites": "", "target_audience": "", "learning_goals": ""},
+            ],
+        }
+
+        metadata = {"content_type": "question", "course_name": "Python"}
+        run_extraction(1, "test text", "test.md", metadata)
+
+        assert mock_create_question.call_count == 2
+        assert mock_create_course.call_count == 1
+        assert mock_task.questions_extracted == 2
+        assert mock_task.courses_extracted == 1
+
+    @patch("app.services.importer.create_course")
+    @patch("app.services.importer.create_question")
+    @patch("app.services.importer.extract_structured_content")
+    @patch("app.services.importer.SessionLocal")
+    def test_run_extraction_empty_result(
+        self,
+        mock_session_local,
+        mock_extract,
+        mock_create_question,
+        mock_create_course,
+    ):
+        from app.services.importer import run_extraction
+
+        mock_db = MagicMock()
+        mock_session_local.return_value = mock_db
+
+        mock_task = MagicMock()
+        mock_task.status = "processing"
+        mock_db.get.return_value = mock_task
+
+        mock_extract.return_value = {"questions": [], "courses": []}
+
+        run_extraction(1, "no useful content", "test.md", {})
+
+        assert mock_task.questions_extracted == 0
+        assert mock_task.courses_extracted == 0
+        assert mock_create_question.call_count == 0
+        assert mock_create_course.call_count == 0
+
 
 class TestListImportTasks:
     @patch("app.services.importer.ImportTask")

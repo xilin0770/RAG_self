@@ -25,6 +25,18 @@ def init_db():
             conn.commit()
     except Exception:
         pass  # column already exists
+    # Ensure questions_extracted and courses_extracted columns exist
+    for col in ["questions_extracted", "courses_extracted"]:
+        try:
+            with engine.connect() as conn:
+                conn.execute(
+                    __import__("sqlalchemy").text(
+                        f"ALTER TABLE import_tasks ADD COLUMN {col} INTEGER DEFAULT 0"
+                    )
+                )
+                conn.commit()
+        except Exception:
+            pass  # column already exists
 
     # Ensure citations column exists on existing messages tables
     try:

@@ -15,6 +15,8 @@ class ImportTask(Base):
     progress = Column(Float, default=0.0)
     total_chunks = Column(Integer, default=0)
     completed_chunks = Column(Integer, default=0)
+    questions_extracted = Column(Integer, default=0)
+    courses_extracted = Column(Integer, default=0)
     error_message = Column(Text, default="")
     metadata_json = Column(Text, default="{}")  # course_name, project_name, chapter_name, etc.
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

@@ -1,3 +1,5 @@
+import logging
+import threading
 from datetime import datetime, timezone
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -7,9 +9,78 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.models.import_task import ImportTask
 from app.models.document import DocumentFragment
+from app.models.course import Course
 from app.services.parser import parse_document
 from app.services.embedding import embed_texts
 from app.services.vector_store import add_chunks
+from app.services.extractor import extract_structured_content
+from app.services.question_service import create_question
+from app.services.course_service import create_course
+
+logger = logging.getLogger(__name__)
+
+
+def run_extraction(
+    task_id: int,
+    text: str,
+    filename: str,
+    metadata: dict,
+):
+    """Run LLM structured extraction and persist results to DB."""
+    db = SessionLocal()
+    try:
+        result = extract_structured_content(text, filename)
+
+        questions_count = 0
+        courses_count = 0
+        course_name = metadata.get("course_name", "")
+
+        for q in result.get("questions", []):
+            try:
+                create_question(
+                    db=db,
+                    content=q.get("content", ""),
+                    question_type=q.get("question_type", "short_answer"),
+                    options=q.get("options", []),
+                    answer=q.get("answer", ""),
+                    explanation=q.get("explanation", ""),
+                    course_name=course_name,
+                    source_file=filename,
+                )
+                questions_count += 1
+            except Exception as e:
+                logger.warning("Failed to create question from extraction: %s", e)
+
+        for c in result.get("courses", []):
+            name = c.get("name", "").strip()
+            if not name:
+                continue
+            try:
+                existing = db.query(Course).filter(Course.name == name).first()
+                if not existing:
+                    create_course(
+                        db=db,
+                        name=name,
+                        description=c.get("description", ""),
+                        prerequisites=c.get("prerequisites", ""),
+                        target_audience=c.get("target_audience", ""),
+                        learning_goals=c.get("learning_goals", ""),
+                    )
+                courses_count += 1
+            except Exception as e:
+                logger.warning("Failed to create course from extraction: %s", e)
+
+        task = db.get(ImportTask, task_id)
+        if task and task.status in ("processing", "completed"):
+            task.questions_extracted = questions_count
+            task.courses_extracted = courses_count
+            task.updated_at = datetime.now(timezone.utc)
+            db.commit()
+    except Exception as e:
+        logger.warning("extraction task %d failed: %s", task_id, e)
+        db.rollback()
+    finally:
+        db.close()
 
 
 def run_import(
@@ -34,7 +105,17 @@ def run_import(
         # 1. Parse
         text = parse_document(file_bytes, filename)
 
-        # 2. Chunk with user-specified parameters
+        # 2. Start extraction in parallel for question/course types
+        content_type = metadata.get("content_type", "")
+        if content_type in ("question", "course_intro"):
+            t = threading.Thread(
+                target=run_extraction,
+                args=(task_id, text, filename, metadata),
+                daemon=True,
+            )
+            t.start()
+
+        # 3. Chunk with user-specified parameters (original step 2)
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
