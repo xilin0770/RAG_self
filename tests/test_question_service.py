@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock, call, ANY
 from app.services.qa_service import ask_sync
 
 
@@ -28,7 +28,7 @@ class TestQASync:
         # Verify user and assistant messages were saved
         assert mock_add.call_count == 2
         mock_add.assert_any_call(mock_db, 1, "user", "What is Python?")
-        mock_add.assert_any_call(mock_db, 1, "assistant", "Python是一种编程语言")
+        mock_add.assert_any_call(mock_db, 1, "assistant", "Python是一种编程语言", citations=ANY)
 
     @patch("app.services.qa_service.add_message")
     @patch("app.services.qa_service.create_conversation")
