@@ -87,6 +87,21 @@
             />
           </template>
         </el-table-column>
+        <el-table-column label="提取结果" width="160">
+          <template #default="{ row }">
+            <template v-if="row.status === 'completed'">
+              <span v-if="(row.questions_extracted || 0) + (row.courses_extracted || 0) > 0">
+                <span v-if="row.questions_extracted">题目 {{ row.questions_extracted }} 道</span>
+                <span v-if="row.questions_extracted && row.courses_extracted">，</span>
+                <span v-if="row.courses_extracted">课程 {{ row.courses_extracted }} 门</span>
+              </span>
+              <span v-else style="color: #909399">-</span>
+            </template>
+            <template v-else>
+              <span style="color: #909399">-</span>
+            </template>
+          </template>
+        </el-table-column>
         <el-table-column prop="created_at" label="更新时间" width="170" />
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
