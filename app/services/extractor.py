@@ -110,6 +110,17 @@ def _split_long_paragraph(text: str, max_chars: int) -> List[str]:
         if not sentence.strip():
             continue
         sent_len = len(sentence)
+
+        # If a single sentence exceeds max_chars, force-split it
+        if sent_len > max_chars:
+            if current:
+                chunks.append("".join(current))
+                current = []
+                current_len = 0
+            for i in range(0, sent_len, max_chars):
+                chunks.append(sentence[i : i + max_chars])
+            continue
+
         if current_len + sent_len > max_chars and current:
             chunks.append("".join(current))
             current = []
@@ -119,11 +130,6 @@ def _split_long_paragraph(text: str, max_chars: int) -> List[str]:
 
     if current:
         chunks.append("".join(current))
-
-    # If still no chunks (shouldn't happen), fall back to character split
-    if not chunks:
-        for i in range(0, len(text), max_chars):
-            chunks.append(text[i : i + max_chars])
 
     return chunks
 
