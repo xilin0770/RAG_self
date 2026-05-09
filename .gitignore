@@ -9,3 +9,4 @@ data/education_kb.sqlite
 *.egg-info/
 dist/
 .pytest_cache/
+.superpowers/
