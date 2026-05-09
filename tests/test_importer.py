@@ -204,7 +204,11 @@ class TestRunExtraction:
         mock_session_local.return_value = mock_db
 
         mock_task = MagicMock()
+        mock_task.status = "processing"
         mock_db.get.return_value = mock_task
+
+        # Course not found in DB → create_course will be called
+        mock_db.query.return_value.filter.return_value.first.return_value = None
 
         mock_extract.return_value = {
             "questions": [
@@ -224,12 +228,16 @@ class TestRunExtraction:
         assert mock_task.questions_extracted == 2
         assert mock_task.courses_extracted == 1
 
+    @patch("app.services.importer.create_course")
+    @patch("app.services.importer.create_question")
     @patch("app.services.importer.extract_structured_content")
     @patch("app.services.importer.SessionLocal")
     def test_run_extraction_empty_result(
         self,
         mock_session_local,
         mock_extract,
+        mock_create_question,
+        mock_create_course,
     ):
         from app.services.importer import run_extraction
 
@@ -237,6 +245,7 @@ class TestRunExtraction:
         mock_session_local.return_value = mock_db
 
         mock_task = MagicMock()
+        mock_task.status = "processing"
         mock_db.get.return_value = mock_task
 
         mock_extract.return_value = {"questions": [], "courses": []}
@@ -245,6 +254,8 @@ class TestRunExtraction:
 
         assert mock_task.questions_extracted == 0
         assert mock_task.courses_extracted == 0
+        assert mock_create_question.call_count == 0
+        assert mock_create_course.call_count == 0
 
 
 class TestListImportTasks:

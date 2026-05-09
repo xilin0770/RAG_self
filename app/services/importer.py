@@ -1,3 +1,4 @@
+import logging
 import threading
 from datetime import datetime, timezone
 
@@ -8,12 +9,15 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.models.import_task import ImportTask
 from app.models.document import DocumentFragment
+from app.models.course import Course
 from app.services.parser import parse_document
 from app.services.embedding import embed_texts
 from app.services.vector_store import add_chunks
 from app.services.extractor import extract_structured_content
 from app.services.question_service import create_question
 from app.services.course_service import create_course
+
+logger = logging.getLogger(__name__)
 
 
 def run_extraction(
@@ -44,30 +48,36 @@ def run_extraction(
                     source_file=filename,
                 )
                 questions_count += 1
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to create question from extraction: %s", e)
 
         for c in result.get("courses", []):
+            name = c.get("name", "").strip()
+            if not name:
+                continue
             try:
-                create_course(
-                    db=db,
-                    name=c.get("name", ""),
-                    description=c.get("description", ""),
-                    prerequisites=c.get("prerequisites", ""),
-                    target_audience=c.get("target_audience", ""),
-                    learning_goals=c.get("learning_goals", ""),
-                )
+                existing = db.query(Course).filter(Course.name == name).first()
+                if not existing:
+                    create_course(
+                        db=db,
+                        name=name,
+                        description=c.get("description", ""),
+                        prerequisites=c.get("prerequisites", ""),
+                        target_audience=c.get("target_audience", ""),
+                        learning_goals=c.get("learning_goals", ""),
+                    )
                 courses_count += 1
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to create course from extraction: %s", e)
 
         task = db.get(ImportTask, task_id)
-        if task:
+        if task and task.status in ("processing", "completed"):
             task.questions_extracted = questions_count
             task.courses_extracted = courses_count
             task.updated_at = datetime.now(timezone.utc)
             db.commit()
-    except Exception:
+    except Exception as e:
+        logger.warning("extraction task %d failed: %s", task_id, e)
         db.rollback()
     finally:
         db.close()
@@ -105,7 +115,7 @@ def run_import(
             )
             t.start()
 
-        # 3. Chunk with user-specified parameters
+        # 3. Chunk with user-specified parameters (original step 2)
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,

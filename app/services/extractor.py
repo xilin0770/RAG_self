@@ -192,7 +192,7 @@ def _extract_one_chunk(text: str) -> Dict[str, Any]:
     """
     try:
         llm = get_llm()
-        prompt = EXTRACTOR_PROMPT.format(text=text)
+        prompt = EXTRACTOR_PROMPT.replace("{text}", text)
         response = llm.invoke([{"role": "user", "content": prompt}])
         return _parse_llm_response(response.content)
     except Exception as e:
